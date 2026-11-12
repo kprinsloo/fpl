@@ -30,7 +30,9 @@ def main():
     teams = [{"id": i + 1, "name": n, "short_name": n[:3].upper()} for i, n in enumerate(TEAMS)]
     events = [{"id": g, "name": f"Gameweek {g}", "deadline_time": f"2026-08-{(g % 28) + 1:02d}T10:00:00Z",
                "finished": g <= FINISHED, "data_checked": g <= FINISHED,
-               "is_current": g == FINISHED, "is_next": g == FINISHED + 1} for g in range(1, 39)]
+               "is_current": g == FINISHED, "is_next": g == FINISHED + 1,
+               "average_entry_score": random.randint(40, 65) if g <= FINISHED else 0,
+               "highest_score": random.randint(110, 160) if g <= FINISHED else None} for g in range(1, 39)]
     elements = []
     pid = 1
     for t in teams:
@@ -42,6 +44,8 @@ def main():
                     "now_cost": random.randint(40, 140), "total_points": 0,
                     "form": f"{random.uniform(0, 8):.1f}", "selected_by_percent": f"{random.uniform(0, 40):.1f}",
                     "status": random.choice("aaaaaaad"), "chance_of_playing_next_round": None, "news": "",
+                    "cost_change_start": random.randint(-3, 8), "transfers_in_event": random.randint(0, 90000),
+                    "transfers_out_event": random.randint(0, 90000),
                 })
                 pid += 1
     fixtures = []
@@ -81,7 +85,16 @@ def main():
         dump(f"event_{g}_live", {"elements": live})
     for e in elements:
         e["total_points"] = totals[e["id"]]
-    dump("bootstrap-static", {"events": events, "teams": teams, "elements": elements,
+    total_players = 11_000_000
+    for e in elements:
+        price, own = e["now_cost"] - e["cost_change_start"], random.uniform(0.1, 40)
+        hist = []
+        for g in range(1, FINISHED + 1):
+            price += random.choice([0, 0, 0, 1, -1])
+            own = max(0.05, own * random.uniform(0.85, 1.15))
+            hist.append({"round": g, "value": price, "selected": int(own / 100 * total_players)})
+        dump(f"element-summary_{e['id']}", {"history": hist})
+    dump("bootstrap-static", {"total_players": total_players, "events": events, "teams": teams, "elements": elements,
                               "element_types": [{"id": i, "singular_name_short": s} for i, s in
                                                 ((1, "GKP"), (2, "DEF"), (3, "MID"), (4, "FWD"))]})
     dump("fixtures", fixtures)
@@ -100,9 +113,13 @@ def main():
                           "summary_overall_points": total, "summary_overall_rank": rank, "current_event": FINISHED})
     dump(f"entry_{mid}_history", {"current": hist, "chips": [{"name": "wildcard", "event": 4}]})
     squad = random.sample(elements, 15)
-    dump(f"entry_{mid}_event_{FINISHED}_picks", {"active_chip": None, "picks": [
-        {"element": e["id"], "position": i + 1, "multiplier": 2 if i == 0 else (1 if i < 11 else 0),
-         "is_captain": i == 0, "is_vice_captain": i == 1} for i, e in enumerate(squad)]})
+    for g in range(1, FINISHED + 1):
+        if g in (4, 7):  # a couple of transfers
+            squad[random.randint(0, 14)] = random.choice([e for e in elements if e not in squad])
+        chip = {4: "wildcard", 6: "bboost", 8: "3xc"}.get(g)
+        dump(f"entry_{mid}_event_{g}_picks", {"active_chip": chip, "automatic_subs": [], "picks": [
+            {"element": e["id"], "position": i + 1, "multiplier": 2 if i == 0 else (1 if i < 11 else 0),
+             "is_captain": i == 0, "is_vice_captain": i == 1} for i, e in enumerate(squad)]})
     print(f"Fixtures written to {OUT}")
 
 
