@@ -81,9 +81,12 @@ tr.divider td{color:var(--muted);font-size:12px;text-align:left;background:none;
 .form{display:inline-block;width:20px;height:20px;line-height:20px;border-radius:4px;color:#fff;font-size:11px;font-weight:700;text-align:center;margin-left:2px}
 .form.W{background:#10b981}.form.D{background:#94a3b8}.form.L{background:#e11d48}
 .other{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
-.other a{display:block;border:1px solid var(--line);border-radius:10px;padding:14px;text-decoration:none;color:var(--fg);background:var(--card)}
-.other a:hover{border-color:var(--accent)}
-.other a b{display:block;margin-bottom:2px}
+.other a{display:block;border-radius:10px;padding:14px 16px;text-decoration:none;color:#fff;transition:transform .12s,filter .12s}
+.other a:hover{transform:translateY(-2px);filter:brightness(1.12)}
+.other a b{display:block;margin-bottom:2px;font-size:16px}
+.other a span{opacity:.85;font-size:13px}
+.other a.f1{background:linear-gradient(135deg,#e10600,#8a0400)}
+.other a.rugby{background:linear-gradient(135deg,#15803d,#0b4a24)}
 .notice{padding:14px;border:1px dashed var(--line);border-radius:8px;color:var(--muted)}
 footer{color:var(--muted);font-size:12px;text-align:center;padding:8px 16px 24px}
 </style>
@@ -197,8 +200,8 @@ footer{color:var(--muted);font-size:12px;text-align:center;padding:8px 16px 24px
   <div class="card" id="otherWork">
     <h2>My Other Work</h2><p class="hint">Other dashboards I keep.</p>
     <div class="other">
-      <a href="https://kprinsloo.github.io/f1-points-tracker/" target="_blank" rel="noopener"><b>F1 Points Tracker</b><span class="muted">Driver and constructor points by race</span></a>
-      <a href="https://kprinsloo.github.io/nba-summary/" target="_blank" rel="noopener"><b>NBA Summary</b><span class="muted">NBA season summary</span></a>
+      <a class="f1" href="https://kprinsloo.github.io/f1/" target="_blank" rel="noopener"><b>F1 Tracker ↗</b><span>Every current F1 driver and team</span></a>
+      <a class="rugby" href="https://kprinsloo.github.io/rugby/" target="_blank" rel="noopener"><b>Rugby Tracker ↗</b><span>Minutes played by every player in international games</span></a>
     </div>
   </div>
 </main>
