@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FPL Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--fg:#1d2433;--muted:#6b7385;--line:#e3e6ec;--accent:#37003c;--accent2:#00b36b;--warn:#c2410c;--head:#37003c;--headfg:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#12141a;--card:#1b1e26;--fg:#e8eaf0;--muted:#9aa1b2;--line:#2b303b;--accent:#c58cff;--accent2:#2fd08a;--warn:#fb923c;--head:#24102a;--headfg:#fff}}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--fg)}
+header{background:var(--head);color:var(--headfg);padding:18px 16px 0}
+header h1{margin:0;font-size:22px}
+header .sub{opacity:.8;font-size:13px;margin:4px 0 12px}
+nav{display:flex;gap:4px;overflow-x:auto}
+nav button{background:none;border:0;color:var(--headfg);opacity:.7;padding:10px 14px;font:inherit;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+nav button.on{opacity:1;border-color:var(--accent2);font-weight:600}
+main{max-width:1200px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+.card h2{margin:0 0 12px;font-size:16px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.tile .k{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.tile .v{font-size:24px;font-weight:650;margin-top:2px}
+.tile .s{color:var(--muted);font-size:12px}
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center}
+select,input{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg)}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child,th.l,td.l{text-align:left}
+th{color:var(--muted);font-weight:600;cursor:pointer;user-select:none;position:sticky;top:0;background:var(--card)}
+th.sorted{color:var(--fg)}
+tr:hover td{background:color-mix(in srgb,var(--accent) 6%,transparent)}
+.pill{display:inline-block;font-size:11px;padding:1px 6px;border-radius:9px;background:var(--line);color:var(--fg);margin-left:4px}
+.flag{color:var(--warn)}
+.xp{font-weight:600;color:var(--accent2)}
+.chart{position:relative;height:340px}
+.muted{color:var(--muted)}
+.hidden{display:none}
+footer{color:var(--muted);font-size:12px;text-align:center;padding:16px}
+</style>
+</head>
+<body>
+<header>
+  <h1>FPL Tracker</h1>
+  <div class="sub" id="sub">Loading…</div>
+  <nav>
+    <button data-tab="overview" class="on">Overview</button>
+    <button data-tab="team">My team</button>
+    <button data-tab="top">Top performers</button>
+  </nav>
+</header>
+<main>
+  <section id="overview">
+    <div class="tiles" id="ovTiles"></div>
+    <div class="card"><h2>Cumulative points, top 10 players</h2><div class="chart"><canvas id="cumChart"></canvas></div></div>
+    <div class="card">
+      <h2>All players</h2>
+      <div class="controls">
+        <input id="q" placeholder="Search player" size="16">
+        <select id="fPos"><option value="">All positions</option><option>GK</option><option>DEF</option><option>MID</option><option>FWD</option></select>
+        <select id="fTeam"><option value="">All teams</option></select>
+        <select id="fRows"><option value="50">Top 50</option><option value="100">Top 100</option><option value="9999">All</option></select>
+      </div>
+      <div class="tbl"><table id="ovTable"></table></div>
+    </div>
+  </section>
+
+  <section id="team" class="hidden">
+    <div class="controls"><label class="muted">Manager</label><select id="mgr"></select></div>
+    <div class="tiles" id="tmTiles"></div>
+    <div class="card"><h2>Overall rank by gameweek</h2><div class="chart"><canvas id="rankChart"></canvas></div></div>
+    <div class="card"><h2>Points by gameweek</h2><div class="chart"><canvas id="ptsChart"></canvas></div></div>
+    <div class="card"><h2 id="picksTitle">Current squad</h2><div class="tbl"><table id="picks"></table></div></div>
+  </section>
+
+  <section id="top" class="hidden">
+    <div class="card">
+      <h2>Top performers</h2>
+      <div class="controls">
+        <select id="tStat"></select>
+        <select id="tRange"><option value="season">Whole season</option><option value="last4">Last 4 gameweeks</option></select>
+        <select id="tPos"><option value="">All positions</option><option>GK</option><option>DEF</option><option>MID</option><option>FWD</option></select>
+        <select id="tRows"><option value="25">Top 25</option><option value="50">Top 50</option><option value="100">Top 100</option></select>
+      </div>
+      <div class="tbl"><table id="topTable"></table></div>
+      <p class="muted" style="font-size:12px;margin:10px 0 0">xP columns are expected points for the next three gameweeks, built from xG, xA, clean-sheet odds, minutes, defensive contributions, bonus and cards under the 2026/27 scoring rules.</p>
+    </div>
+  </section>
+</main>
+<footer id="foot"></footer>
+
+<script>
+const $ = s => document.querySelector(s);
+const fmt = (v, d = 0) => v == null ? '–' : Number(v).toLocaleString(undefined, {minimumFractionDigits: d, maximumFractionDigits: d});
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const PALETTE = ['#7c3aed','#00b36b','#e11d48','#0ea5e9','#f59e0b','#14b8a6','#a855f7','#84cc16','#f97316','#64748b'];
+const LABELS = {total_points:'Points', minutes:'Minutes', goals_scored:'Goals', assists:'Assists', clean_sheets:'Clean sheets',
+  goals_conceded:'Goals conceded', own_goals:'Own goals', penalties_saved:'Penalties saved', penalties_missed:'Penalties missed',
+  yellow_cards:'Yellow cards', red_cards:'Red cards', saves:'Saves', bonus:'Bonus', bps:'BPS', influence:'Influence',
+  creativity:'Creativity', threat:'Threat', ict_index:'ICT index', starts:'Starts', expected_goals:'xG', expected_assists:'xA',
+  expected_goal_involvements:'xGI', expected_goals_conceded:'xGC', defensive_contribution:'Defensive contribution',
+  clearances_blocks_interceptions:'CBI', recoveries:'Recoveries', tackles:'Tackles'};
+const FIRST = ['total_points','goals_scored','assists','expected_goals','expected_assists','expected_goal_involvements','clean_sheets','bonus','bps','defensive_contribution','saves','minutes'];
+let D = {}, charts = {};
+
+async function load(name, fallback) {
+  try { const r = await fetch(`data/${name}.json?v=${Date.now()}`); if (!r.ok) throw 0; return await r.json(); }
+  catch { return fallback; }
+}
+
+function chart(id, cfg) {
+  if (charts[id]) charts[id].destroy();
+  Chart.defaults.color = css('--muted'); Chart.defaults.borderColor = css('--line');
+  charts[id] = new Chart($(id), cfg);
+}
+
+function sortable(table, cols, rows, initial, initialDir = -1) {
+  let key = initial, dir = initialDir;
+  const draw = () => {
+    const col = cols.find(c => c.k === key);
+    const sorted = [...rows].sort((a, b) => {
+      const va = col.v(a), vb = col.v(b);
+      return (typeof va === 'string' ? va.localeCompare(vb) : (va ?? -1e9) - (vb ?? -1e9)) * dir;
+    });
+    table.innerHTML = '<thead><tr>' + cols.map(c => `<th data-k="${c.k}" class="${c.l ? 'l' : ''} ${c.k === key ? 'sorted' : ''}">${c.h}${c.k === key ? (dir < 0 ? ' ▾' : ' ▴') : ''}</th>`).join('') + '</tr></thead><tbody>' +
+      sorted.map(r => '<tr>' + cols.map(c => `<td class="${c.l ? 'l' : ''} ${c.cls || ''}">${c.f ? c.f(r) : c.v(r)}</td>`).join('') + '</tr>').join('') + '</tbody>';
+    table.querySelectorAll('th').forEach(th => th.onclick = () => { if (key === th.dataset.k) dir = -dir; else { key = th.dataset.k; dir = -1; } draw(); });
+  };
+  draw();
+}
+
+const teamShort = id => D.fpl.teams[id]?.short ?? '?';
+const playerName = p => {
+  const flag = p.status !== 'a' ? ` <span class="flag" title="${(p.news || '').replace(/"/g, '&quot;')}">⚠${p.chance != null ? p.chance + '%' : ''}</span>` : '';
+  return `${p.name}${flag}`;
+};
+
+function renderOverview() {
+  const {players, gws} = D.fpl;
+  const last = gws.length - 1;
+  const best = [...players].sort((a, b) => (b.pts[last] ?? 0) - (a.pts[last] ?? 0))[0];
+  const topForm = [...players].sort((a, b) => b.form - a.form)[0];
+  $('#ovTiles').innerHTML = [
+    ['Gameweeks played', gws.length, `Season ${D.fpl.season}`],
+    ['Top scorer', players[0]?.name, `${players[0]?.total} pts`],
+    [`Best in GW${gws[last] ?? ''}`, best?.name, `${best?.pts[last] ?? 0} pts`],
+    ['Best form', topForm?.name, `${fmt(topForm?.form, 1)} per game`],
+  ].map(([k, v, s]) => `<div class="tile"><div class="k">${k}</div><div class="v">${v ?? '–'}</div><div class="s">${s}</div></div>`).join('');
+
+  const top10 = players.slice(0, 10);
+  chart('#cumChart', {type: 'line', data: {labels: gws.map(g => 'GW' + g), datasets: top10.map((p, i) => {
+    let c = 0; return {label: p.name, data: p.pts.map(x => c += x), borderColor: PALETTE[i], backgroundColor: PALETTE[i], tension: .25, pointRadius: 2};
+  })}, options: {maintainAspectRatio: false, interaction: {mode: 'nearest', intersect: false}, plugins: {legend: {position: 'bottom'}}}});
+
+  const teamSel = $('#fTeam');
+  if (teamSel.options.length === 1) Object.entries(D.fpl.teams).sort((a, b) => a[1].name.localeCompare(b[1].name)).forEach(([id, t]) => teamSel.add(new Option(t.name, id)));
+  drawOverviewTable();
+}
+
+function drawOverviewTable() {
+  const q = $('#q').value.toLowerCase(), pos = $('#fPos').value, team = $('#fTeam').value, n = +$('#fRows').value;
+  const {gws} = D.fpl;
+  const rows = D.fpl.players.filter(p => (!q || (p.name + ' ' + p.full).toLowerCase().includes(q)) && (!pos || p.pos === pos) && (!team || p.team == team)).slice(0, n);
+  const recent = gws.slice(-6);
+  const cols = [
+    {k: 'name', h: 'Player', l: 1, v: p => p.name, f: playerName},
+    {k: 'team', h: 'Team', l: 1, v: p => teamShort(p.team)},
+    {k: 'pos', h: 'Pos', l: 1, v: p => p.pos},
+    {k: 'cost', h: '£m', v: p => p.cost, f: p => fmt(p.cost, 1)},
+    {k: 'sel', h: 'Sel %', v: p => p.sel, f: p => fmt(p.sel, 1)},
+    {k: 'form', h: 'Form', v: p => p.form, f: p => fmt(p.form, 1)},
+    ...recent.map(g => ({k: 'gw' + g, h: 'GW' + g, v: p => p.pts[gws.indexOf(g)]})),
+    {k: 'total', h: 'Total', v: p => p.total, cls: 'xp'},
+  ];
+  sortable($('#ovTable'), cols, rows, 'total');
+}
+
+function renderTeam() {
+  const ms = D.managers.managers || [];
+  const sel = $('#mgr');
+  if (!ms.length) { $('#tmTiles').innerHTML = '<p class="muted">No managers tracked yet. Add one with the "Run workflow" button on the refresh action.</p>'; return; }
+  if (!sel.options.length) { ms.forEach(m => sel.add(new Option(`${m.team} (${m.id})`, m.id))); sel.value = D.managers.default ?? ms[0].id; sel.onchange = renderTeam; }
+  const m = ms.find(x => x.id == sel.value) || ms[0];
+  const h = m.history;
+  const last = h[h.length - 1] || {};
+  const bestGw = [...h].sort((a, b) => b.pts - a.pts)[0];
+  const bestRank = Math.min(...h.map(x => x.overall || Infinity));
+  $('#tmTiles').innerHTML = [
+    ['Overall rank', fmt(m.rank), last.gw ? `after GW${last.gw}` : ''],
+    ['Total points', fmt(m.points), `${m.manager}`],
+    [`GW${last.gw ?? ''} points`, last.pts ?? '–', last.hit ? `−${last.hit} hit` : 'no hits'],
+    ['Best gameweek', bestGw ? bestGw.pts : '–', bestGw ? `GW${bestGw.gw}` : ''],
+    ['Best overall rank', isFinite(bestRank) ? fmt(bestRank) : '–', ''],
+    ['Team value', last.value ? '£' + fmt(last.value, 1) + 'm' : '–', last.bank != null ? `£${fmt(last.bank, 1)}m in bank` : ''],
+  ].map(([k, v, s]) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
+
+  const chips = Object.fromEntries((m.chips || []).map(c => [c.gw, c.name]));
+  const labels = h.map(x => 'GW' + x.gw + (chips[x.gw] ? ' ★' : ''));
+  chart('#rankChart', {type: 'line', data: {labels, datasets: [{label: 'Overall rank', data: h.map(x => x.overall), borderColor: PALETTE[0], backgroundColor: PALETTE[0], tension: .25}]},
+    options: {maintainAspectRatio: false, scales: {y: {reverse: true, ticks: {callback: v => fmt(v)}}}, plugins: {legend: {display: false}, tooltip: {callbacks: {afterLabel: c => chips[h[c.dataIndex].gw] ? 'Chip: ' + chips[h[c.dataIndex].gw] : ''}}}}});
+
+  chart('#ptsChart', {data: {labels, datasets: [
+    {type: 'bar', label: 'Points', data: h.map(x => x.pts), backgroundColor: PALETTE[1]},
+    {type: 'bar', label: 'Bench', data: h.map(x => x.bench), backgroundColor: css('--line')},
+  ]}, options: {maintainAspectRatio: false, plugins: {legend: {position: 'bottom'}}}});
+
+  const byId = Object.fromEntries(D.fpl.players.map(p => [p.id, p]));
+  const pk = m.picks;
+  $('#picksTitle').textContent = pk ? `Squad for GW${pk.gw}${pk.chip ? ' (' + pk.chip + ')' : ''}` : 'Current squad';
+  if (!pk) { $('#picks').innerHTML = '<tr><td class="muted">No picks available.</td></tr>'; return; }
+  const gwIdx = D.fpl.gws.indexOf(pk.gw);
+  const pr = D.pred.players || {};
+  const rows = pk.picks.map(x => ({...x, p: byId[x.id] || {name: '#' + x.id, pts: []}}));
+  const cols = [
+    {k: 'slot', h: '#', v: r => r.pos, f: r => r.pos <= 11 ? r.pos : `<span class="muted">B${r.pos - 11}</span>`},
+    {k: 'name', h: 'Player', l: 1, v: r => r.p.name, f: r => playerName(r.p) + (r.c ? '<span class="pill">C</span>' : r.vc ? '<span class="pill">VC</span>' : '')},
+    {k: 'team', h: 'Team', l: 1, v: r => teamShort(r.p.team)},
+    {k: 'ppos', h: 'Pos', l: 1, v: r => r.p.pos},
+    {k: 'gw', h: `GW${pk.gw}`, v: r => (r.p.pts[gwIdx] ?? 0) * (r.mult || 1)},
+    {k: 'total', h: 'Season', v: r => r.p.total},
+    ...(D.pred.gws || []).map((g, i) => ({k: 'xp' + g, h: `xP GW${g}`, cls: 'xp', v: r => pr[r.id]?.[i], f: r => fmt(pr[r.id]?.[i], 1)})),
+  ];
+  sortable($('#picks'), cols, rows, 'slot', 1);
+}
+
+function renderTop() {
+  const statSel = $('#tStat');
+  if (!statSel.options.length) {
+    const keys = [...FIRST.filter(k => D.stats.keys.includes(k)), ...D.stats.keys.filter(k => !FIRST.includes(k))];
+    keys.forEach(k => statSel.add(new Option(LABELS[k] || k.replace(/_/g, ' '), k)));
+  }
+  const stat = statSel.value, range = $('#tRange').value, pos = $('#tPos').value, n = +$('#tRows').value;
+  const S = D.stats.players, pr = D.pred.players || {};
+  const rows = D.fpl.players.filter(p => (!pos || p.pos === pos) && S[p.id])
+    .map(p => ({p, s: S[p.id][range]}))
+    .sort((a, b) => (b.s[stat] ?? 0) - (a.s[stat] ?? 0)).slice(0, n);
+  const fl = v => Number.isInteger(v) ? fmt(v) : fmt(v, 2);
+  const fx = (team, g) => (D.pred.fixtures?.[team]?.[g] || []).map(([o, ha]) => `${teamShort(o)} (${ha})`).join(', ') || 'blank';
+  const cols = [
+    {k: 'name', h: 'Player', l: 1, v: r => r.p.name, f: r => playerName(r.p)},
+    {k: 'team', h: 'Team', l: 1, v: r => teamShort(r.p.team)},
+    {k: 'pos', h: 'Pos', l: 1, v: r => r.p.pos},
+    {k: 'cost', h: '£m', v: r => r.p.cost, f: r => fmt(r.p.cost, 1)},
+    {k: 'stat', h: (LABELS[stat] || stat), cls: 'xp', v: r => r.s[stat] ?? 0, f: r => fl(r.s[stat] ?? 0)},
+    {k: 'min', h: 'Minutes', v: r => r.s.minutes ?? 0, f: r => fmt(r.s.minutes)},
+    ...(stat === 'total_points' ? [] : [{k: 'pts', h: 'Points', v: r => r.s.total_points ?? 0}]),
+    ...(D.pred.gws || []).map((g, i) => ({k: 'xp' + g, h: `xP GW${g}`, v: r => pr[r.p.id]?.[i], f: r => `<span title="${fx(r.p.team, g)}">${fmt(pr[r.p.id]?.[i], 1)}</span>`})),
+    ...(D.pred.gws?.length ? [{k: 'xpt', h: 'xP total', cls: 'xp', v: r => (pr[r.p.id] || []).reduce((a, b) => a + b, 0), f: r => fmt((pr[r.p.id] || []).reduce((a, b) => a + b, 0), 1)}] : []),
+  ];
+  sortable($('#topTable'), cols, rows, 'stat');
+}
+
+const RENDER = {overview: renderOverview, team: renderTeam, top: renderTop};
+function show(tab) {
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  Object.keys(RENDER).forEach(t => $('#' + t).classList.toggle('hidden', t !== tab));
+  RENDER[tab]();
+  try { localStorage.setItem('fplTab', tab); } catch {}
+}
+
+(async () => {
+  const [fpl, stats, managers, pred] = await Promise.all([
+    load('fpl', null), load('stats', {keys: [], players: {}}), load('managers', {managers: []}), load('predictions', {gws: [], players: {}})]);
+  if (!fpl) { $('#sub').textContent = 'No data yet. It will appear after the first refresh run.'; return; }
+  D = {fpl, stats, managers, pred};
+  const upd = new Date(fpl.updated);
+  $('#sub').textContent = `Season ${fpl.season} · after GW${fpl.gws[fpl.gws.length - 1] ?? 0} · updated ${upd.toLocaleString()}`;
+  $('#foot').textContent = 'Data from the official Fantasy Premier League API. Refreshes every Tuesday.';
+  ['#q', '#fPos', '#fTeam', '#fRows'].forEach(s => $(s).addEventListener('input', drawOverviewTable));
+  ['#tStat', '#tRange', '#tPos', '#tRows'].forEach(s => $(s).addEventListener('input', renderTop));
+  document.querySelectorAll('nav button').forEach(b => b.onclick = () => show(b.dataset.tab));
+  let tab = 'overview'; try { tab = localStorage.getItem('fplTab') || tab; } catch {}
+  show(RENDER[tab] ? tab : 'overview');
+})();
+</script>
+</body>
+</html>
