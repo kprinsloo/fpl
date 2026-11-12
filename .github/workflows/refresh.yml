@@ -1,4 +1,4 @@
-name: Weekly refresh
+name: Refresh FPL data
 
 on:
   schedule:
@@ -42,7 +42,9 @@ jobs:
         run: python scripts/fetch_managers.py --add "${{ inputs.manager_id }}"
 
       - name: Fetch player data
-        run: python scripts/fetch_fpl.py | tee fetch.log
+        env:
+          SUMMARY_FILE: ${{ runner.temp }}/summary.md
+        run: python scripts/fetch_fpl.py
 
       - name: Fetch managers
         run: python scripts/fetch_managers.py
@@ -52,7 +54,12 @@ jobs:
 
       - name: Summary
         id: summary
-        run: echo "text=$(head -n1 fetch.log)" >> "$GITHUB_OUTPUT"
+        run: |
+          {
+            echo "text<<EOF"
+            cat "${{ runner.temp }}/summary.md" 2>/dev/null || true
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Commit data
         run: |
@@ -107,6 +114,6 @@ jobs:
               number = created.data.number;
             }
             const body = ok
-              ? `@${owner} ✅ Refresh done. ${process.env.SUMMARY || ''}\n\nDashboard: ${pages}\nRun: ${run}`
+              ? `@${owner} ✅ Weekly refresh done.\n\n${process.env.SUMMARY || ''}\nDashboard: ${pages}\nRun: ${run}`
               : `@${owner} ⚠️ Refresh failed (data: ${process.env.REFRESH}, deploy: ${process.env.DEPLOY}).\n\nCheck the run: ${run}`;
             await github.rest.issues.createComment({owner, repo, issue_number: number, body});
