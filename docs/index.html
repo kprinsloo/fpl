@@ -37,6 +37,7 @@ button.btn{cursor:pointer}
 .seg button.on{background:var(--accent);color:#fff}
 .chart{position:relative;height:320px}
 .chart.tall{height:380px}
+.chart.tbars{height:560px}
 .tbl{overflow-x:auto;max-width:100%}
 table{border-collapse:collapse;width:100%;font-size:13.5px}
 th,td{padding:5px 7px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
@@ -100,6 +101,7 @@ footer{color:var(--muted);font-size:12px;text-align:center;padding:8px 16px 24px
       <a href="#overview" data-tab="overview" class="on">Overview</a>
       <a href="#team" data-tab="team">My team</a>
       <a href="#top" data-tab="top">Top performers</a>
+      <a href="#teamperf" data-tab="teamperf">Team performance</a>
       <a href="#standings" data-tab="standings">Standings</a>
     </nav>
   </div>
@@ -180,6 +182,25 @@ footer{color:var(--muted);font-size:12px;text-align:center;padding:8px 16px 24px
       <div class="key" id="topKey"></div>
     </div>
     <div id="topTables"></div>
+  </section>
+
+  <!-- TEAM PERFORMANCE -->
+  <section id="teamperf" class="hidden">
+    <div class="card">
+      <div class="controls" style="margin:0">
+        <div class="seg" id="tpWin"><button data-v="season" class="on">Whole season</button><button data-v="last4">Last 4 games</button></div>
+        <div class="seg" id="tpMode"><button data-v="total" class="on">Total</button><button data-v="pg">Per game</button></div>
+        <span class="muted" style="font-size:13px" id="tpNote"></span>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="card"><h2>Attack: xG</h2><p class="hint">Expected goals created. Best attack at the top. Hover a bar for actual goals.</p><div class="chart tbars"><canvas id="tpXg"></canvas></div></div>
+      <div class="card"><h2>Defence: xG conceded</h2><p class="hint">Expected goals allowed to opponents. Best defence (fewest) at the top.</p><div class="chart tbars"><canvas id="tpXga"></canvas></div></div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h2>Team xG table</h2><p class="hint">Click a column to sort. Goals minus xG above zero means a team is scoring more than its chances suggest (finishing or luck); conceded minus xGA below zero means it is letting in fewer than expected.</p>
+      <div class="tbl"><table id="tpTable"></table></div>
+    </div>
   </section>
 
   <!-- STANDINGS -->
@@ -587,6 +608,56 @@ function renderTop() {
   });
 }
 
+/* ---------------- TEAM PERFORMANCE ---------------- */
+let tpWin = 'season', tpMode = 'total';
+function teamPerf() {
+  // Sum each team's rows; for "last 4" take its most recent gameweeks until it has 4 games.
+  return Object.entries(D.teams.teams || {}).map(([id, rows]) => {
+    let use = rows;
+    if (tpWin === 'last4') {
+      use = []; let g = 0;
+      for (let i = rows.length - 1; i >= 0 && g < 4; i--) { use.unshift(rows[i]); g += rows[i][1]; }
+    }
+    const t = {id, name: D.fpl.teams[id]?.name ?? '?', short: teamS(id), P: 0, xg: 0, xga: 0, gf: 0, ga: 0,
+      from: use[0]?.[0], to: use[use.length - 1]?.[0]};
+    use.forEach(([, n, xg, xga, gf, ga]) => { t.P += n; t.xg += xg; t.xga += xga; t.gf += gf; t.ga += ga; });
+    return t;
+  }).filter(t => t.P);
+}
+function renderTeamPerf() {
+  const rows = teamPerf();
+  if (!rows.length) { $('#tpNote').textContent = 'No team xG yet. It will appear after the next refresh.'; return; }
+  const pg = tpMode === 'pg', per = (t, k) => pg ? t[k] / t.P : t[k], d = pg ? 2 : 1;
+  const gws = D.teams.gws || [];
+  $('#tpNote').textContent = tpWin === 'season'
+    ? `GW${gws[0]}–GW${gws[gws.length - 1]}`
+    : 'Each team\'s last 4 matches (a double gameweek can make it 5).';
+  // Same x scale on both charts so attack and defence bars compare directly.
+  const xmax = Math.max(...rows.map(t => Math.max(per(t, 'xg'), per(t, 'xga'))));
+  const bars = (id, k, gk, asc, color, label) => {
+    const s = [...rows].sort((a, b) => (per(a, k) - per(b, k)) * (asc ? 1 : -1));
+    chart(id, {type: 'bar', data: {labels: s.map(t => t.name), datasets: [{data: s.map(t => +per(t, k).toFixed(2)), backgroundColor: color,
+        borderRadius: 4, borderSkipped: 'start', barPercentage: .82, categoryPercentage: .9}]},
+      options: {indexAxis: 'y', maintainAspectRatio: false, scales: {y: {grid: {display: false}}, x: {beginAtZero: true, suggestedMax: xmax, title: {display: true, text: label + (pg ? ' per game' : '')}}},
+        plugins: {legend: {display: false}, tooltip: {callbacks: {
+          label: c => { const t = s[c.dataIndex]; return [`${label}: ${fmt(per(t, k), d)}`, `${gk === 'gf' ? 'Goals' : 'Conceded'}: ${fmt(per(t, gk), d)}`, `${t.P} games${tpWin === 'last4' ? ` (GW${t.from}–GW${t.to})` : ''}`]; }}}}}});
+  };
+  bars('tpXg', 'xg', 'gf', false, css('--accent2'), 'xG');
+  bars('tpXga', 'xga', 'ga', true, '#60a5fa', 'xG conceded');
+  const sg = v => { const r = +v.toFixed(d); return (r > 0 ? '+' : '') + fmt(r === 0 ? 0 : r, d); };
+  sortable($('#tpTable'), [
+    {k: 'name', h: 'Team', l: 1, v: t => t.name, f: t => `<b>${esc(t.name)}</b>`},
+    {k: 'P', h: 'Games', v: t => t.P},
+    {k: 'xg', h: 'xG', t: 'Expected goals for', v: t => per(t, 'xg'), f: t => fmt(per(t, 'xg'), d)},
+    {k: 'gf', h: 'Goals', v: t => per(t, 'gf'), f: t => fmt(per(t, 'gf'), pg ? 2 : 0)},
+    {k: 'gmx', h: 'G − xG', t: 'Goals minus expected goals', v: t => per(t, 'gf') - per(t, 'xg'), f: t => sg(per(t, 'gf') - per(t, 'xg'))},
+    {k: 'xga', h: 'xGA', t: 'Expected goals conceded', v: t => per(t, 'xga'), f: t => fmt(per(t, 'xga'), d)},
+    {k: 'ga', h: 'Conceded', v: t => per(t, 'ga'), f: t => fmt(per(t, 'ga'), pg ? 2 : 0)},
+    {k: 'cmx', h: 'Conc − xGA', t: 'Goals conceded minus expected goals conceded', v: t => per(t, 'ga') - per(t, 'xga'), f: t => sg(per(t, 'ga') - per(t, 'xga'))},
+    {k: 'xgd', h: 'xG diff', t: 'xG minus xG conceded', v: t => per(t, 'xg') - per(t, 'xga'), f: t => `<b>${sg(per(t, 'xg') - per(t, 'xga'))}</b>`},
+  ], rows, {key: 'xgd'});
+}
+
 /* ---------------- STANDINGS ---------------- */
 function renderStandings() {
   const T = {};
@@ -613,7 +684,7 @@ function renderStandings() {
 }
 
 /* ---------------- ROUTING ---------------- */
-const RENDER = {overview: renderOverview, team: renderTeam, top: renderTop, standings: renderStandings};
+const RENDER = {overview: renderOverview, team: renderTeam, top: renderTop, teamperf: renderTeamPerf, standings: renderStandings};
 function route() {
   const h = location.hash.slice(1);
   const tab = h.startsWith('manager=') ? 'team' : (RENDER[h] ? h : 'overview');
@@ -623,19 +694,22 @@ function route() {
 }
 
 (async () => {
-  const [fpl, stats, managers, pred, hist, fx] = await Promise.all([
+  const [fpl, stats, managers, pred, hist, fx, teams] = await Promise.all([
     load('fpl', null), load('stats', {keys: [], players: {}}), load('managers', {managers: []}),
-    load('predictions', {gws: [], players: {}}), load('history', {players: {}}), load('fixtures', [])]);
+    load('predictions', {gws: [], players: {}}), load('history', {players: {}}), load('fixtures', []), load('teams', {gws: [], teams: {}})]);
   $('#foot').textContent = 'Data from the official Fantasy Premier League API. Refreshes every Tuesday at 06:00 UTC.';
   if (!fpl) { $('#sub').textContent = 'No data yet. It will appear after the first refresh run.'; return; }
   fpl.players.forEach(p => { if (p.pos === 'GK') p.pos = 'GKP'; });
-  D = {fpl, stats, managers, pred, hist, fx};
+  D = {fpl, stats, managers, pred, hist, fx, teams};
   byId = Object.fromEntries(fpl.players.map(p => [p.id, p]));
   const upd = new Date(fpl.updated);
   $('#sub').textContent = `Season ${fpl.season} · after GW${fpl.gws[fpl.gws.length - 1] ?? 0} · last updated ${upd.toLocaleString(undefined, {dateStyle: 'medium', timeStyle: 'short'})}`;
   document.querySelectorAll('#tWin button').forEach(b => b.onclick = () => {
     topWin = b.dataset.v; document.querySelectorAll('#tWin button').forEach(x => x.classList.toggle('on', x === b)); renderTop();
   });
+  [['#tpWin', v => tpWin = v], ['#tpMode', v => tpMode = v]].forEach(([sel, set]) => document.querySelectorAll(sel + ' button').forEach(b => b.onclick = () => {
+    set(b.dataset.v); document.querySelectorAll(sel + ' button').forEach(x => x.classList.toggle('on', x === b)); renderTeamPerf();
+  }));
   window.addEventListener('hashchange', route);
   route();
 })();
