@@ -9,6 +9,7 @@ Outputs:
   docs/data/stats.json              season and last-4-GW stat totals
   docs/data/history.json            price and ownership per player per GW
   docs/data/fixtures.json           slim fixture list (standings, next match)
+  docs/data/teams.json              team xG for/against per gameweek
 """
 import csv
 import datetime as dt
@@ -20,7 +21,7 @@ from fpl_api import ROOT, finished_gws, get, read_json, season_of, write_json  #
 
 # Bump when the set of stored stats changes; cached GW files with another
 # version are fetched again.
-STATS_VERSION = 2
+STATS_VERSION = 3  # 3: per-player fixture ids (for team xG)
 POSITIONS = {1: "GKP", 2: "DEF", 3: "MID", 4: "FWD"}
 # Stats summed into stats.json (anything numeric in the live data is kept,
 # these are listed first in the dashboard).
@@ -42,10 +43,13 @@ def load_gw(season_dir, gw, refresh=False):
     if cached and cached.get("v") == STATS_VERSION and not refresh:
         return cached
     live = get(f"event/{gw}/live/")
-    out = {"v": STATS_VERSION, "gw": gw, "players": {}}
+    out = {"v": STATS_VERSION, "gw": gw, "players": {}, "fx": {}}
     for el in live["elements"]:
         stats = {k: num(v) for k, v in el["stats"].items() if k not in SKIP_STATS}
         out["players"][str(el["id"])] = stats
+        fx = [e["fixture"] for e in el.get("explain", []) if e.get("fixture") is not None]
+        if fx:
+            out["fx"][str(el["id"])] = fx
     write_json(path, out)
     return out
 
@@ -89,6 +93,56 @@ def update_history(season_dir, boot, gws):
             "p": [rec.get(str(g), [None, None])[0] for g in gws],
             "o": [rec.get(str(g), [None, None])[1] for g in gws],
         }
+    return out
+
+
+def team_xg(boot, fixtures, gws, gw_data):
+    """xG for and against per team per gameweek, summed from player xG.
+
+    A player's xG counts for their current club only if that club played in
+    the fixture(s) the live data lists for them, so January transfers are not
+    credited to the new club for earlier weeks. xG against is the opponent's
+    xG in the same fixture. When an opponent played twice that week (double
+    gameweek) its xG is split evenly over its fixtures.
+    Returns {team_id: [[gw, games, xg, xga, goals, conceded], ...]}.
+    """
+    team_of = {el["id"]: el["team"] for el in boot["elements"]}
+    out = {str(t["id"]): [] for t in boot["teams"]}
+    skipped = 0
+    for gw in gws:
+        fxs = [f for f in fixtures if f.get("event") == gw and f.get("finished")]
+        if not fxs:
+            continue
+        fx_by_id = {f["id"]: f for f in fxs}
+        games = {}
+        for f in fxs:
+            for t in (f["team_h"], f["team_a"]):
+                games[t] = games.get(t, 0) + 1
+        xg = {t: 0.0 for t in games}
+        gd = gw_data[gw]
+        for pid, s in gd["players"].items():
+            v = s.get("expected_goals", 0.0)
+            if not v:
+                continue
+            team = team_of.get(int(pid))
+            ids = gd.get("fx", {}).get(pid)
+            played = [fx_by_id[i] for i in ids if i in fx_by_id] if ids else None
+            if played is not None and not any(team in (f["team_h"], f["team_a"]) for f in played):
+                skipped += 1  # moved clubs since; their xG then was for someone else
+                continue
+            if team in xg:
+                xg[team] += v
+        goals, conc, xga = {t: 0 for t in games}, {t: 0 for t in games}, {t: 0.0 for t in games}
+        for f in fxs:
+            h, a = f["team_h"], f["team_a"]
+            xga[h] += xg[a] / games[a]
+            xga[a] += xg[h] / games[h]
+            hs, as_ = f.get("team_h_score") or 0, f.get("team_a_score") or 0
+            goals[h] += hs; conc[h] += as_; goals[a] += as_; conc[a] += hs
+        for t in games:
+            out.setdefault(str(t), []).append([gw, games[t], round(xg[t], 2), round(xga[t], 2), goals[t], conc[t]])
+    if skipped:
+        print(f"Team xG: skipped {skipped} player-weeks for players who changed club")
     return out
 
 
@@ -170,6 +224,9 @@ def main():
     })
     write_json(os.path.join(ROOT, "docs", "data", "history.json"), {"gws": gws, "players": hist})
     write_json(os.path.join(ROOT, "docs", "data", "fixtures.json"), slim_fx)
+    write_json(os.path.join(ROOT, "docs", "data", "teams.json"), {
+        "season": season, "updated": now, "gws": gws, "teams": team_xg(boot, fixtures, gws, gw_data),
+    })
     write_json(os.path.join(ROOT, "docs", "data", "stats.json"), {
         "season": season, "updated": now, "gws": gws, "last4": last4,
         "keys": stat_keys, "players": stats_out,

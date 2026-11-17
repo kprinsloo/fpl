@@ -61,13 +61,17 @@ def main():
     totals = {e["id"]: 0 for e in elements}
     for g in range(1, FINISHED + 1):
         live = []
+        fx_of = {}
+        for f in fixtures:
+            if f["event"] == g:
+                fx_of[f["team_h"]] = fx_of[f["team_a"]] = f["id"]
         for e in elements:
             starter = random.random() < (0.5 if e["element_type"] == 1 else 0.7)
             minutes = random.choice([90, 90, 85, 72]) if starter else random.choice([0, 0, 15, 30])
             goals = random.random() < 0.05 * e["element_type"] if minutes else False
             pts = (2 if minutes >= 60 else 1 if minutes else 0) + (5 if goals else 0) + random.randint(0, 3) * bool(minutes)
             totals[e["id"]] += pts
-            live.append({"id": e["id"], "stats": {
+            live.append({"id": e["id"], "explain": [{"fixture": fx_of[e["team"]], "stats": []}], "stats": {
                 "minutes": minutes, "goals_scored": int(goals), "assists": int(random.random() < 0.08),
                 "clean_sheets": int(minutes >= 60 and random.random() < 0.3), "goals_conceded": random.randint(0, 3) if minutes else 0,
                 "own_goals": 0, "penalties_saved": 0, "penalties_missed": 0,

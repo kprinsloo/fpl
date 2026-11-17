@@ -20,7 +20,8 @@ on GitHub Pages: https://kprinsloo.github.io/fpl/
 
 1. `scripts/fetch_fpl.py` pulls player data from the public FPL API, caches each finished
    gameweek in `data/<season>/gw/`, and writes `docs/data/fpl.json`, `stats.json`,
-   `history.json` (price and ownership), `fixtures.json` and a CSV in `data/<season>/`.
+   `history.json` (price and ownership), `fixtures.json`, `teams.json` (team xG for and
+   against per gameweek) and a CSV in `data/<season>/`.
 2. `scripts/fetch_managers.py` fetches every manager listed in `managers.json`, including
    their picks each week (cached in `data/<season>/managers/`).
 3. `scripts/predict.py` writes next-3-GW expected points to `docs/data/predictions.json`.
