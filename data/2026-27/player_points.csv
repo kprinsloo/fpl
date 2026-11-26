@@ -6,10 +6,10 @@ id,name,team,pos,cost,total,GW1,GW2,GW3,GW4,GW5,GW6,GW7,GW8,GW9,GW10,GW11
 4,Gabriel,ARS,DEF,8.1,67,5,8,2,9,1,2,8,17,6,8,1
 79,Evanilson,BOU,FWD,6.6,67,4,5,2,5,2,7,12,6,9,9,6
 68,Tavernier,BOU,MID,6.8,66,10,1,10,8,2,1,10,10,3,3,8
-379,Isak,LIV,FWD,9.3,66,2,8,13,2,8,0,9,9,2,8,5
+379,Isak,LIV,FWD,9.4,66,2,8,13,2,8,0,9,9,2,8,5
 112,Van Hecke,TOT,DEF,5.2,63,1,1,8,8,6,3,4,7,15,4,6
 330,Bogle,LEE,DEF,4.8,62,6,2,14,15,5,1,2,5,1,7,4
-1,Raya,ARS,GKP,6.3,61,6,6,3,14,1,3,9,7,5,6,1
+1,Raya,ARS,GKP,6.2,61,6,6,3,14,1,3,9,7,5,6,1
 366,Wirtz,LIV,MID,7.4,60,2,4,3,3,6,2,5,6,2,13,14
 109,Verbruggen,BHA,GKP,4.7,59,6,0,3,8,6,9,6,2,11,6,2
 572,Tzolakis,HUL,GKP,4.7,59,10,10,6,2,6,2,3,3,1,6,10
@@ -19,7 +19,7 @@ id,name,team,pos,cost,total,GW1,GW2,GW3,GW4,GW5,GW6,GW7,GW8,GW9,GW10,GW11
 40,Rogers,CHE,MID,8.3,57,8,5,6,8,2,9,2,1,9,2,5
 249,Barry,EVE,FWD,5.7,57,8,2,2,2,6,6,2,2,9,16,2
 166,N.Jackson,AVL,FWD,7.3,56,0,2,2,0,6,9,2,13,9,11,2
-60,Hill,BOU,DEF,5.6,56,1,4,1,2,4,2,7,11,6,4,14
+60,Hill,BOU,DEF,5.7,56,1,4,1,2,4,2,7,11,6,4,14
 385,Trafford,LEE,GKP,5.1,56,9,3,3,3,10,2,2,10,2,10,2
 15,Ødegaard,ARS,MID,6.7,55,11,3,10,3,2,1,3,3,3,11,5
 86,Lewis-Potter,BRE,MID,5.5,55,10,6,2,1,3,2,9,2,3,1,16
@@ -115,7 +115,7 @@ id,name,team,pos,cost,total,GW1,GW2,GW3,GW4,GW5,GW6,GW7,GW8,GW9,GW10,GW11
 377,Munoz,LIV,MID,6.5,33,4,6,3,1,1,2,9,0,1,0,6
 544,Xhaka,SUN,MID,5.3,33,9,6,3,1,2,2,2,3,4,1,0
 282,Giles,HUL,DEF,4.0,32,6,6,8,4,0,2,1,2,1,1,1
-558,Schlager,NFO,MID,5.0,32,1,4,3,3,2,2,4,4,1,7,1
+558,Schlager,NFO,MID,4.9,32,1,4,3,3,2,2,4,4,1,7,1
 534,Hume,SUN,DEF,4.2,32,2,6,1,0,1,1,3,6,1,6,5
 552,Brobbey,SUN,FWD,5.7,32,2,2,2,1,17,0,0,2,2,4,0
 52,Alysson,AVL,MID,4.9,31,1,0,1,6,0,1,0,1,2,16,3
@@ -221,7 +221,7 @@ id,name,team,pos,cost,total,GW1,GW2,GW3,GW4,GW5,GW6,GW7,GW8,GW9,GW10,GW11
 71,Cook,BOU,MID,4.9,20,3,3,1,0,1,1,2,6,1,1,1
 85,Van den Berg,BRE,DEF,4.9,20,0,0,0,0,0,0,1,2,10,1,6
 149,Colwill,CHE,DEF,4.8,20,0,1,0,1,1,2,6,3,6,0,0
-184,Grimes,COV,MID,4.8,20,2,2,2,2,3,2,2,2,1,1,1
+184,Grimes,COV,MID,4.7,20,2,2,2,2,3,2,2,2,1,1,1
 644,Timber,CRY,MID,5.0,20,0,0,2,4,3,7,1,0,0,1,2
 570,Palacios,FUL,MID,5.2,20,2,1,8,0,1,0,1,1,1,4,1
 393,Khusanov,MCI,DEF,5.3,20,2,2,5,0,0,0,1,3,4,1,2
@@ -247,7 +247,7 @@ id,name,team,pos,cost,total,GW1,GW2,GW3,GW4,GW5,GW6,GW7,GW8,GW9,GW10,GW11
 201,Muñoz,NFO,DEF,5.2,17,0,0,1,2,2,1,2,7,0,2,0
 46,Barkley,AVL,MID,4.9,16,2,2,3,2,1,1,1,1,1,1,1
 125,Georginio,BHA,FWD,5.2,16,5,0,0,0,1,4,1,1,1,1,2
-203,Canvot,CRY,DEF,4.8,16,1,0,1,0,8,4,-2,0,3,0,1
+203,Canvot,CRY,DEF,4.7,16,1,0,1,0,8,4,-2,0,3,0,1
 209,Johnson,EVE,MID,5.8,16,1,1,1,3,3,2,1,2,0,1,1
 640,Flemming,IPS,FWD,5.5,16,0,0,1,5,0,1,5,1,1,0,2
 260,Wilson,LEE,MID,6.1,16,3,1,0,1,0,1,0,3,2,1,4
@@ -280,7 +280,7 @@ id,name,team,pos,cost,total,GW1,GW2,GW3,GW4,GW5,GW6,GW7,GW8,GW9,GW10,GW11
 491,Igor Jesus,NFO,FWD,5.6,13,2,1,1,7,1,0,0,0,0,0,1
 498,Senesi,TOT,DEF,5.7,13,3,0,0,0,0,2,0,0,0,0,8
 11,Mosquera,ARS,DEF,5.1,12,6,6,0,0,0,0,0,0,0,0,0
-17,Merino,ARS,MID,5.7,12,1,1,0,1,1,1,1,3,1,1,1
+17,Merino,ARS,MID,5.6,12,1,1,0,1,1,1,1,3,1,1,1
 100,Carvalho,BRE,MID,5.0,12,0,0,0,0,6,0,0,0,0,0,6
 157,Estêvão,CHE,MID,6.3,12,1,0,1,1,1,1,0,1,3,1,2
 655,Gboho,COV,MID,5.5,12,0,0,0,0,0,0,0,0,2,8,2
@@ -296,7 +296,7 @@ id,name,team,pos,cost,total,GW1,GW2,GW3,GW4,GW5,GW6,GW7,GW8,GW9,GW10,GW11
 238,Grealish,EVE,MID,6.5,11,1,0,1,1,3,2,2,0,0,0,1
 269,Sessegnon,FUL,DEF,4.3,11,1,1,1,0,0,7,-2,0,0,1,2
 371,Gravenberch,LIV,MID,5.8,11,5,1,1,1,1,-1,0,3,0,0,0
-162,Andrey Santos,MUN,MID,4.7,11,2,1,1,0,0,0,1,3,2,0,1
+162,Andrey Santos,MUN,MID,4.6,11,2,1,1,0,0,0,1,3,2,0,1
 429,Rashford,MUN,MID,6.8,11,1,2,3,2,2,1,0,0,0,0,0
 461,Touré,NEW,MID,5.7,11,0,1,0,6,1,1,1,0,1,0,0
 403,Sávio,TOT,MID,6.4,11,0,0,3,3,2,2,0,0,0,0,1
@@ -332,7 +332,7 @@ id,name,team,pos,cost,total,GW1,GW2,GW3,GW4,GW5,GW6,GW7,GW8,GW9,GW10,GW11
 108,Wilson,BRE,FWD,5.3,8,1,1,1,0,0,0,0,1,1,1,2
 130,Wieffer,BHA,DEF,4.8,8,7,0,0,0,0,0,0,0,1,0,0
 144,Gusto,CHE,DEF,4.8,8,1,1,1,1,0,1,0,0,1,1,1
-643,Chilwell,CRY,DEF,4.4,8,0,0,7,1,0,0,0,0,0,0,0
+643,Chilwell,CRY,DEF,4.3,8,0,0,7,1,0,0,0,0,0,0,0
 647,Osorio,CRY,MID,5.4,8,0,0,1,0,0,0,0,1,1,4,1
 256,Tete,FUL,DEF,4.4,8,0,0,0,0,0,1,0,1,1,1,4
 589,Gourna-Douath,HUL,MID,4.9,8,0,1,2,0,1,0,0,0,0,1,3
@@ -437,7 +437,7 @@ id,name,team,pos,cost,total,GW1,GW2,GW3,GW4,GW5,GW6,GW7,GW8,GW9,GW10,GW11
 35,Bogarde,AVL,MID,4.9,1,1,0,0,0,0,0,0,0,0,0,0
 66,Soler,BOU,DEF,4.0,1,0,0,0,0,0,1,0,0,0,0,0
 573,Sanchez,BOU,DEF,4.4,1,0,0,0,0,0,1,0,0,0,0,0
-89,Henry,BRE,DEF,4.4,1,0,1,0,0,0,0,0,0,0,0,0
+89,Henry,BRE,DEF,4.3,1,0,1,0,0,0,0,0,0,0,0,0
 135,Yohanna,BHA,MID,4.7,1,1,0,0,0,0,0,0,0,0,0,0
 594,David,BHA,FWD,5.9,1,0,1,0,0,0,0,0,0,0,0,0
 662,Nicoll-Jazuli,CHE,MID,4.5,1,0,0,0,0,1,0,0,0,0,0,0
@@ -552,7 +552,7 @@ id,name,team,pos,cost,total,GW1,GW2,GW3,GW4,GW5,GW6,GW7,GW8,GW9,GW10,GW11
 626,Zepa,FUL,MID,4.4,0,0,0,0,0,0,0,0,0,0,0,0
 636,Ángel,FUL,MID,5.0,0,0,0,0,0,0,0,0,0,0,0,0
 674,Kaiser,FUL,GKP,4.0,0,0,0,0,0,0,0,0,0,0,0,0
-273,Phillips,HUL,GKP,4.0,0,0,0,0,0,0,0,0,0,0,0,0
+273,Phillips,HUL,GKP,3.9,0,0,0,0,0,0,0,0,0,0,0,0
 274,Butland,HUL,GKP,4.4,0,0,0,0,0,0,0,0,0,0,0,0
 275,Cartwright,HUL,GKP,4.0,0,0,0,0,0,0,0,0,0,0,0,0
 276,Lo-Tutala,HUL,GKP,4.0,0,0,0,0,0,0,0,0,0,0,0,0
@@ -619,7 +619,7 @@ id,name,team,pos,cost,total,GW1,GW2,GW3,GW4,GW5,GW6,GW7,GW8,GW9,GW10,GW11
 410,Monga,MCI,MID,4.9,0,0,0,0,0,0,0,0,0,0,0,0
 587,Rulli,MCI,GKP,4.9,0,0,0,0,0,0,0,0,0,0,0,0
 653,Samba,MCI,MID,4.4,0,0,0,0,0,0,0,0,0,0,0,0
-325,Darlow,MUN,GKP,4.5,0,0,0,0,0,0,0,0,0,0,0,0
+325,Darlow,MUN,GKP,4.4,0,0,0,0,0,0,0,0,0,0,0,0
 413,Bayindir,MUN,GKP,4.5,0,0,0,0,0,0,0,0,0,0,0,0
 414,Heaton,MUN,GKP,4.0,0,0,0,0,0,0,0,0,0,0,0,0
 424,Amass,MUN,DEF,3.9,0,0,0,0,0,0,0,0,0,0,0,0
