@@ -35,6 +35,8 @@ button.btn{cursor:pointer}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
 .seg button{font:inherit;font-size:13px;border:0;background:var(--card);color:var(--fg);padding:6px 10px;cursor:pointer}
 .seg button.on{background:var(--accent);color:#fff}
+.tick{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);cursor:pointer;user-select:none}
+.tick input{accent-color:var(--accent);width:15px;height:15px;margin:0;cursor:pointer}
 .chart{position:relative;height:320px}
 .chart.tall{height:380px}
 .chart.tbars{height:560px}
@@ -115,7 +117,7 @@ footer{color:var(--muted);font-size:12px;text-align:center;padding:8px 16px 24px
       <div class="card"><div class="controls" style="justify-content:space-between;margin-bottom:4px"><h2>Top 10 in gameweek</h2><select id="topGw"></select></div><p class="hint">Highest-scoring players in the chosen gameweek.</p><div class="chart"><canvas id="top10Chart"></canvas></div></div>
     </div>
     <div class="card" style="margin-top:16px">
-      <div class="controls" style="justify-content:space-between;margin-bottom:4px"><h2>Player comparison</h2><div class="seg" id="cmpMode"><button data-v="week" class="on">Weekly</button><button data-v="cum">Cumulative</button></div></div>
+      <div class="controls" style="justify-content:space-between;margin-bottom:4px"><h2>Player comparison</h2><div class="controls" style="gap:12px"><label class="tick"><input type="checkbox" id="cmpPred"> Show predicted (next 3 GWs)</label><div class="seg" id="cmpMode"><button data-v="week" class="on">Weekly</button><button data-v="cum">Cumulative</button></div></div></div>
       <p class="hint">Search to add up to 8 players.</p>
       <div class="controls"><div class="picker" id="cmpPick"></div></div>
       <div class="chips" id="cmpChips"></div>
@@ -354,11 +356,33 @@ function renderOverview() {
   sel.onchange = drawTop; drawTop();
 
   // Player comparison
-  let cmpSel = [], cmpMode = 'week';
-  const drawCmp = () => chart('cmpChart', {type: 'line', data: {labels: gwLabels(), datasets: cmpSel.map((id, i) => {
-    let c = 0; const p = byId[id];
-    return {label: p.name, data: cmpMode === 'cum' ? p.pts.map(x => c += x) : p.pts, borderColor: PAL[i % 8], backgroundColor: PAL[i % 8], tension: .25};
-  })}, options: {maintainAspectRatio: false, interaction: {mode: 'index', intersect: false}, plugins: {legend: {position: 'bottom'}}}});
+  let cmpSel = [], cmpMode = 'week', cmpPred = false;
+  // Predicted points for the gameweeks after the latest one (up to 3), from predictions.json.
+  const lastGw = gws[gws.length - 1];
+  const predIdx = (D.pred.gws || []).map((g, j) => [g, j]).filter(([g]) => g > lastGw).slice(0, 3);
+  const nAct = gws.length;
+  const drawCmp = () => {
+    const showPred = cmpPred && predIdx.length > 0;
+    const labels = gwLabels().concat(showPred ? predIdx.map(([g]) => 'GW' + g) : []);
+    chart('cmpChart', {type: 'line', data: {labels, datasets: cmpSel.map((id, i) => {
+      const p = byId[id], col = PAL[i % 8];
+      const pr = D.pred.players?.[id];
+      let pts = [...p.pts];
+      if (showPred) pts = pts.concat(predIdx.map(([, j]) => pr?.[j] ?? null));
+      let c = 0;
+      const data = cmpMode === 'cum' ? pts.map(x => x == null ? null : +(c += x).toFixed(1)) : pts;
+      // The projected part (from the latest GW onwards) is dashed and slightly thicker, same colour.
+      const proj = ctx => ctx.p1DataIndex >= nAct;
+      return {label: p.name, data, borderColor: col, backgroundColor: col, tension: .25, borderWidth: 2,
+        pointStyle: ctx => ctx.dataIndex >= nAct ? 'rectRot' : 'circle',
+        segment: {borderDash: ctx => proj(ctx) ? [6, 4] : undefined, borderWidth: ctx => proj(ctx) ? 3.5 : undefined}};
+    })}, options: {maintainAspectRatio: false, interaction: {mode: 'index', intersect: false}, plugins: {legend: {position: 'bottom'},
+      tooltip: {callbacks: {title: items => items.length ? items[0].label + (items[0].dataIndex >= nAct ? ' (predicted)' : '') : '',
+        label: c => `${c.dataset.label}: ${c.raw == null ? '–' : fmt(c.raw, c.dataIndex >= nAct ? 1 : 0)}`}}}}});
+  };
+  const predBox = $('#cmpPred');
+  if (!predIdx.length) { predBox.disabled = true; predBox.parentElement.title = 'No predictions available yet'; }
+  predBox.onchange = () => { cmpPred = predBox.checked; drawCmp(); };
   picker({el: $('#cmpPick'), chipsEl: $('#cmpChips'), defaults: players.slice(0, 3).map(p => p.id), onChange: s => { cmpSel = s; drawCmp(); },
     chipText: id => ` <span class="muted">${byId[id].total} pts</span>`});
   document.querySelectorAll('#cmpMode button').forEach(b => b.onclick = () => {
